@@ -82,7 +82,8 @@ foreach($all_court AS $court) {
             continue;
         }
         $data = array_combine($header, $line);
-        $y = substr($data['設立登記日期'], 0, 3);
+        preg_match_all('/[0-9]+/', $data['登記案號'], $matches, PREG_OFFSET_CAPTURE);
+        $y = $matches[0][0][0];
         $targetPath = "{$outputPath}/{$courtParts[0]}/{$y}";
         if(!file_exists($targetPath)) {
             mkdir($targetPath, 0777, true);
@@ -91,7 +92,7 @@ foreach($all_court AS $court) {
         if(file_exists($targetFile)) {
             continue;
         }
-        preg_match_all('/[0-9]+/', $data['登記案號'], $matches, PREG_OFFSET_CAPTURE);
+        
         $len = strlen($matches[0][0][0]);
         $parts = array(
             $matches[0][0][0],
