@@ -125,7 +125,7 @@ foreach($all_court AS $court) {
             $cols = explode('</td>', $row);
             if(count($cols) === 4) {
                 foreach($cols AS $k => $v) {
-                    $cols[$k] = str_replace(' ', '', trim(strip_tags($v)));
+                    $cols[$k] = str_replace(array(' ', '　'), '', trim(strip_tags($v)));
                 }
                 if($cols[0] !== '序號') {
                     $data['董監事'][] = array(
