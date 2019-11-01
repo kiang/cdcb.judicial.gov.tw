@@ -45,6 +45,7 @@ $all_court = array(
     'LCD&褔建連江地方法院',
     'KMD&福建金門地方法院',
 );
+$lineCount = 0;
 
 foreach($all_court AS $court) {
     $courtParts = explode('&', $court);
@@ -59,20 +60,26 @@ foreach($all_court AS $court) {
     }
     $headerCount = count($header);
     while($line = fgetcsv($fh, 4096)) {
+        if(++$lineCount % 10000 === 0) {
+            echo "done {$lineCount}\n";
+        }
         foreach($line AS $k => $v) {
             $line[$k] = Converter::iconv($v, 1);
         }
-        while($headerCount > count($line)) {
+        $maxLoop = 0;
+        while($headerCount > count($line) && ++$maxLoop < 5) {
             $nextLine = fgetcsv($fh, 4096);
-            foreach($nextLine AS $k => $v) {
-                $nextLine[$k] = Converter::iconv($v, 1);
-                if($k === 0) {
-                    $lastKey = array_key_last($line);
-                    $line[$lastKey] .= "\n" . $nextLine[0];
-                    end($line);
-                } else {
-                    if($headerCount > count($line)) {
-                        $line[] = $nextLine[$k];
+            if(is_array($nextLine)) {
+                foreach($nextLine AS $k => $v) {
+                    $nextLine[$k] = Converter::iconv($v, 1);
+                    if($k === 0) {
+                        $lastKey = array_key_last($line);
+                        $line[$lastKey] .= "\n" . $nextLine[0];
+                        end($line);
+                    } else {
+                        if($headerCount > count($line)) {
+                            $line[] = $nextLine[$k];
+                        }
                     }
                 }
             }
@@ -83,8 +90,12 @@ foreach($all_court AS $court) {
         }
         $data = array_combine($header, $line);
         preg_match_all('/[0-9]+/', $data['登記案號'], $matches, PREG_OFFSET_CAPTURE);
+        if(!isset($matches[0][0][0])) {
+            fputcsv($fixFh, $line);
+            continue;
+        }
         $y = $matches[0][0][0];
-        if(strlen($y) !== 3) {
+        if(strlen($y) !== 3 || strlen($data['登記案號']) > 30) {
             fputcsv($fixFh, $line);
             continue;
         }
@@ -153,6 +164,6 @@ foreach($all_court AS $court) {
             }
         }
         file_put_contents($targetFile, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_INVALID_UTF8_IGNORE));
-        error_log("done - {$targetFile}");
+        echo "new {$targetFile}\n";
     }
 }
